@@ -16,11 +16,13 @@
  *
  */
 
-#ifndef __INVDAEMON2__INVDAEMON2_H
-#define __INVDAEMON2__INVDAEMON2_H
+#ifndef __INVDAEMON2__UI_H
+#define __INVDAEMON2__UI_H
 
-void signal_handler(int);
+void ui_usage();
 
-void main_app();
+void ui_version();
+
+void ui_help();
 
 #endif

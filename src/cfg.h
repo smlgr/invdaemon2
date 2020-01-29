@@ -16,11 +16,27 @@
  *
  */
 
-#ifndef __INVDAEMON2__INVDAEMON2_H
-#define __INVDAEMON2__INVDAEMON2_H
+#ifndef __INVDAEMON2__CFG_H
+#define __INVDAEMON2__CFG_H
 
-void signal_handler(int);
+#include <stdint.h>
 
-void main_app();
+struct cfg_t {
+    int debug_level;
+    int log_file_level;
+    char *log_file;
+};
+
+typedef struct cfg_t cfg;
+
+void cfg_init();
+
+void cfg_free();
+
+void cfg_print();
+
+int cfg_parse(int, char **);
+
+int cfg_file_parse(char *);
 
 #endif

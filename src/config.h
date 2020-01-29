@@ -16,11 +16,13 @@
  *
  */
 
-#ifndef __INVDAEMON2__INVDAEMON2_H
-#define __INVDAEMON2__INVDAEMON2_H
+#ifndef __INVDAEMON2__CONFIG_H
+#define __INVDAEMON2__CONFIG_H
 
-void signal_handler(int);
+#include "log.h"
 
-void main_app();
+#define CFG_DEBUG_LEVEL_DEFAULT LOG_LEVEL_TRACE
+#define CFG_LOG_FILE_LEVEL_DEFAULT LOG_LEVEL_DEBUG
+#define CFG_LOG_FILE_NAME_DEFAULT "invdaemon2.log"
 
 #endif
