@@ -25,7 +25,6 @@
 #include <netdb.h>
 #include <malloc.h>
 #include <stdlib.h>
-#include <openssl/ssl.h>
 
 #include "http.h"
 #include "log.h"
@@ -35,6 +34,9 @@
 void http_tuple_free(http_tuple *tuple) {
     log_info(LOG_TAG, "Freeing tuple");
 
+    if (tuple == NULL)
+        return;
+
     free(tuple->key);
     free(tuple->value);
 
@@ -42,10 +44,10 @@ void http_tuple_free(http_tuple *tuple) {
 }
 
 void http_tuple_list_free(http_tuple_list *tuple_list) {
-    log_info(LOG_TAG, "Freeing tuple list");
-
     http_tuple_list *item;
     http_tuple_list *next;
+
+    log_info(LOG_TAG, "Freeing tuple list");
 
     item = tuple_list;
 
@@ -60,15 +62,23 @@ void http_tuple_list_free(http_tuple_list *tuple_list) {
 void http_url_free(http_url *url) {
     log_info(LOG_TAG, "Freeing url");
 
+    if (url == NULL)
+        return;
+
     free(url->host);
     free(url->endpoint);
-    http_tuple_list_free(url->query_string);
+
+    if (url->query_string != NULL)
+        http_tuple_list_free(url->query_string);
 
     free(url);
 }
 
 void http_request_free(http_request *request) {
     log_info(LOG_TAG, "Freeing request");
+
+    if (request == NULL)
+        return;
 
     http_url_free(request->url);
     http_tuple_list_free(request->headers);
@@ -80,20 +90,60 @@ void http_request_free(http_request *request) {
 void http_response_free(http_response *response) {
     log_info(LOG_TAG, "Freeing response");
 
+    if (response == NULL)
+        return;
+
     http_tuple_list_free(response->headers);
     free(response->body);
 
     free(response);
 }
 
+http_url *http_url_init(int ssl, char *host, uint16_t port, char *endpoint, http_tuple_list *query_string) {
+    http_url *url;
+    size_t ln;
+
+    url = (http_url *) malloc(sizeof(http_url));
+
+    url->ssl = ssl;
+
+    ln = strlen(host);
+    url->host = (char *) calloc(sizeof(char), ln + 1);
+    strcpy(url->host, host);
+
+    url->port = port;
+
+    ln = strlen(endpoint);
+    url->endpoint = (char *) calloc(sizeof(char), ln + 1);
+    strcpy(url->endpoint, endpoint);
+
+    url->query_string = query_string;
+
+    return url;
+}
+
+http_request *
+http_request_init(http_url *url, http_method method, http_tuple_list *headers, char *body, size_t body_len) {
+    http_request *request;
+
+    request = (http_request *) malloc(sizeof(http_request));
+
+    request->url = url;
+    request->method = method;
+    request->headers = headers;
+
+    request->body = (char *) calloc(sizeof(char), body_len);
+    memcpy(request->body, body, body_len);
+
+    return request;
+}
+
 http_response *http_call(http_request *request) {
     int sck;
     struct hostent *server_host;
 
-    char *res;
     char *tmp;
     struct sockaddr_in serv_addr;
-    char url[1025];
     char buff[SOCKET_TCP_BUFFER];
     char temp[1025];
     http_tuple_list *headers;
@@ -116,7 +166,7 @@ http_response *http_call(http_request *request) {
         return NULL;
     }
 
-    log_debug(LOG_TAG, "Resolving host");
+    log_debug(LOG_TAG, "Resolving host: %s", request->url->host);
     if (!(server_host = gethostbyname(request->url->host))) {
         log_error(LOG_TAG, "Error resolving host");
         return NULL;
@@ -238,45 +288,10 @@ http_response *http_call(http_request *request) {
         http_socket_send(request, ssl, sck, tmp, ln);
     }
 
-//    if (strlen(data) > 0) {
-//        memset(buff, '\0', sizeof(buff));
-//        sprintf(buff, "%s\r\n", data);
-//        strtrmcrlf(dbgmsg, buff);
-//        ui_message(UI_DEBUG, "HTTP", "Socket  --> %s", dbgmsg);
-//        write(sck, buff, strlen(buff));
-//    }
-//
-//    rawdata = (char *) malloc(sizeof(char));
-//    *rawdata = '\0';
-//
-//    ui_message(UI_INFO, "HTTP", "Reading response");
-//
-//    do {
-//        memset(buff, '\0', sizeof(buff));
-//        n = read(sck, buff, sizeof(buff) - 1);
-//
-//        ui_message(UI_DEBUG, "HTTP", "Socket <--  %s", buff);
-//
-//        if (n > 0) {
-//            ln = strlen(rawdata);
-//            rawdata = (char *) realloc(rawdata, ln + n + 1);
-//            strcat(rawdata, buff);
-//        }
-//    } while (n > 0);
-
+    SSL_free(ssl);
     close(sck);
 
-//    tmp = (char *) calloc(sizeof(char), strlen(rawdata));
-//    res_clear(tmp, rawdata);
-//    free(rawdata);
-//
-//    res = (char *) calloc(sizeof(char), strlen(tmp));
-//    strcpy(res, tmp);
-//    free(tmp);
-//
-//    ui_message(UI_DEBUG, "HTTP", "Response: %s", res);
-
-    return res;
+    return NULL;
 }
 
 void http_socket_send(http_request *request, SSL *ssl, int sck, const char *buff, size_t ln) {

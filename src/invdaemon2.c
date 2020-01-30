@@ -21,6 +21,7 @@
 #include "invdaemon2.h"
 #include "cfg.h"
 #include "log.h"
+#include "http.h"
 
 char *program_name;
 cfg *conf;
@@ -53,5 +54,17 @@ void signal_handler(int signal) {
 }
 
 void main_app() {
+    http_url *url;
+    http_request *request;
+    http_response *response;
+
     log_info(LOG_TAG, "App started");
+
+    url = http_url_init(0, "127.0.0.1", 8000, "/", NULL);
+    request = http_request_init(url, METHOD_GET, NULL, NULL, 0);
+    response = http_call(request);
+
+    http_response_free(response);
+    http_request_free(request);
+    http_url_free(url);
 }

@@ -20,6 +20,7 @@
 #define __INVDAEMON2__HTTP_H
 
 #include <stddef.h>
+#include <openssl/ssl.h>
 
 #define SOCKET_TCP_BUFFER 8192
 
@@ -89,6 +90,10 @@ void http_url_free(http_url *);
 void http_request_free(http_request *);
 
 void http_response_free(http_response *);
+
+http_url *http_url_init(int, char *, uint16_t, char *, http_tuple_list *);
+
+http_request *http_request_init(http_url *, http_method, http_tuple_list *, char *, size_t);
 
 http_response *http_call(http_request *);
 
