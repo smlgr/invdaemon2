@@ -37,25 +37,25 @@ void http_tuple_free(http_tuple *tuple) {
     if (tuple == NULL)
         return;
 
-    free(tuple->key);
-    free(tuple->value);
+    if (tuple->key != NULL)
+        free(tuple->key);
+    if (tuple->value != NULL)
+        free(tuple->value);
 
     free(tuple);
 }
 
 void http_tuple_list_free(http_tuple_list *tuple_list) {
-    http_tuple_list *item;
     http_tuple_list *next;
 
     log_info(LOG_TAG, "Freeing tuple list");
 
-    item = tuple_list;
-
-    while (item != NULL) {
-        http_tuple_free(tuple_list->header);
+    while (tuple_list != NULL) {
+        if (tuple_list->header != NULL)
+            http_tuple_free(tuple_list->header);
         next = tuple_list->next;
-        free(item);
-        item = next;
+        free(tuple_list);
+        tuple_list = next;
     }
 }
 
@@ -65,9 +65,10 @@ void http_url_free(http_url *url) {
     if (url == NULL)
         return;
 
-    free(url->host);
-    free(url->endpoint);
-
+    if (url->host != NULL)
+        free(url->host);
+    if (url->endpoint != NULL)
+        free(url->endpoint);
     if (url->query_string != NULL)
         http_tuple_list_free(url->query_string);
 
@@ -80,9 +81,12 @@ void http_request_free(http_request *request) {
     if (request == NULL)
         return;
 
-    http_url_free(request->url);
-    http_tuple_list_free(request->headers);
-    free(request->body);
+    if (request->url != NULL)
+        http_url_free(request->url);
+    if (request->headers != NULL)
+        http_tuple_list_free(request->headers);
+    if (request->body != NULL)
+        free(request->body);
 
     free(request);
 }
@@ -93,8 +97,10 @@ void http_response_free(http_response *response) {
     if (response == NULL)
         return;
 
-    http_tuple_list_free(response->headers);
-    free(response->body);
+    if (response->headers != NULL)
+        http_tuple_list_free(response->headers);
+    if (response->body != NULL)
+        free(response->body);
 
     free(response);
 }
@@ -104,6 +110,8 @@ http_url *http_url_init(int ssl, char *host, uint16_t port, char *endpoint, http
     size_t ln;
 
     url = (http_url *) malloc(sizeof(http_url));
+    if (url == NULL)
+        return NULL;
 
     url->ssl = ssl;
 
@@ -127,13 +135,21 @@ http_request_init(http_url *url, http_method method, http_tuple_list *headers, c
     http_request *request;
 
     request = (http_request *) malloc(sizeof(http_request));
+    if (request == NULL)
+        return NULL;
 
     request->url = url;
     request->method = method;
     request->headers = headers;
 
-    request->body = (char *) calloc(sizeof(char), body_len);
-    memcpy(request->body, body, body_len);
+    if (body_len > 0) {
+        request->body = (char *) calloc(sizeof(char), body_len);
+        memcpy(request->body, body, body_len);
+    } else {
+        request->body = NULL;
+    }
+
+    request->body_len = body_len;
 
     return request;
 }

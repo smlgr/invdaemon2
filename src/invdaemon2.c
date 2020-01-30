@@ -66,5 +66,4 @@ void main_app() {
 
     http_response_free(response);
     http_request_free(request);
-    http_url_free(url);
 }
