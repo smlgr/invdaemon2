@@ -17,6 +17,7 @@
  */
 
 #include <signal.h>
+#include <string.h>
 
 #include "invdaemon2.h"
 #include "cfg.h"
@@ -55,13 +56,32 @@ void signal_handler(int signal) {
 
 void main_app() {
     http_url *url;
+    http_tuple *header;
+    http_tuple_list *headers;
     http_request *request;
     http_response *response;
+    char *request_body;
+
+    url = NULL;
+    header = NULL;
+    headers = NULL;
+    request = NULL;
+    response = NULL;
 
     log_info(LOG_TAG, "App started");
 
-    url = http_url_init(0, "127.0.0.1", 8000, "/", NULL);
-    request = http_request_init(url, METHOD_GET, NULL, NULL, 0);
+    url = http_url_init(1, "127.0.0.1", 8000, "/", NULL);
+
+    header = http_tuple_init("Accept", "application/schema+json");
+    headers = http_tuple_list_add(headers, header);
+
+    header = http_tuple_init("Content-Type", "application/json");
+    headers = http_tuple_list_add(headers, header);
+
+    request_body = (char *) calloc(sizeof(char), 2);
+    memcpy(request_body, "{}", 2);
+
+    request = http_request_init(url, METHOD_GET, headers, request_body, 2);
     response = http_call(request);
 
     http_response_free(response);

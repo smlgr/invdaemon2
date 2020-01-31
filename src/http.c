@@ -51,8 +51,8 @@ void http_tuple_list_free(http_tuple_list *tuple_list) {
     log_info(LOG_TAG, "Freeing tuple list");
 
     while (tuple_list != NULL) {
-        if (tuple_list->header != NULL)
-            http_tuple_free(tuple_list->header);
+        if (tuple_list->tuple != NULL)
+            http_tuple_free(tuple_list->tuple);
         next = tuple_list->next;
         free(tuple_list);
         tuple_list = next;
@@ -103,6 +103,54 @@ void http_response_free(http_response *response) {
         free(response->body);
 
     free(response);
+}
+
+http_tuple *http_tuple_init(char *key, char *value) {
+    http_tuple *tuple;
+    size_t ln;
+
+    tuple = (http_tuple *) malloc(sizeof(http_tuple));
+
+    ln = strlen(key);
+    tuple->key = (char *) calloc(sizeof(char), ln + 1);
+    strcpy(tuple->key, key);
+
+    ln = strlen(value);
+    tuple->value = (char *) calloc(sizeof(char), ln + 1);
+    strcpy(tuple->value, value);
+
+    return tuple;
+}
+
+http_tuple_list *http_tuple_list_init() {
+    http_tuple_list *tuple_list;
+
+    tuple_list = (http_tuple_list *) malloc(sizeof(http_tuple_list));
+    tuple_list->tuple = NULL;
+    tuple_list->next = NULL;
+
+    return tuple_list;
+}
+
+http_tuple_list *http_tuple_list_add(http_tuple_list *tuple_list, http_tuple *tuple) {
+    http_tuple_list *item;
+    http_tuple_list *start;
+
+    item = http_tuple_list_init();
+    item->tuple = tuple;
+    item->next = NULL;
+
+    start = tuple_list;
+
+    if (tuple_list == NULL)
+        return item;
+    else
+        while (tuple_list->next != NULL)
+            tuple_list = tuple_list->next;
+
+    tuple_list->next = item;
+
+    return start;
 }
 
 http_url *http_url_init(int ssl, char *host, uint16_t port, char *endpoint, http_tuple_list *query_string) {
@@ -284,7 +332,7 @@ http_response *http_call(http_request *request) {
 
     while (headers != NULL) {
         memset(buff, '\0', sizeof(buff));
-        sprintf(buff, "%s: %s\r\n", headers->header->key, headers->header->value);
+        sprintf(buff, "%s: %s\r\n", headers->tuple->key, headers->tuple->value);
         http_socket_send(request, ssl, sck, buff, strlen(buff));
 
         headers = headers->next;

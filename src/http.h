@@ -46,7 +46,7 @@ struct http_tuple_t {
 typedef struct http_tuple_t http_tuple;
 
 struct http_tuple_list_t {
-    http_tuple *header;
+    http_tuple *tuple;
     struct http_tuple_list_t *next;
 };
 
@@ -90,6 +90,12 @@ void http_url_free(http_url *);
 void http_request_free(http_request *);
 
 void http_response_free(http_response *);
+
+http_tuple *http_tuple_init(char *, char *);
+
+http_tuple_list *http_tuple_list_init();
+
+http_tuple_list * http_tuple_list_add(http_tuple_list *, http_tuple *);
 
 http_url *http_url_init(int, char *, uint16_t, char *, http_tuple_list *);
 
