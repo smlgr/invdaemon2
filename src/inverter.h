@@ -16,26 +16,18 @@
  *
  */
 
-#ifndef __INVDAEMON2__CONFIG_H
-#define __INVDAEMON2__CONFIG_H
+#ifndef __INVDAEMON2__INVERTER_H
+#define __INVDAEMON2__INVERTER_H
 
-#include "log.h"
+#include "queue.h"
+#include "utils.h"
 
-#define CFG_DEBUG_LEVEL_DEFAULT LOG_LEVEL_TRACE
-#define CFG_LOG_FILE_LEVEL_DEFAULT LOG_LEVEL_DEBUG
-#define CFG_LOG_FILE_NAME_DEFAULT "invdaemon2.log"
+INVDAEMON_BOOL inverter_query(queue_item *);
 
-#define CFG_INVERTER_LOOP_WAIT_DEFAULT 1
-#define CFG_SERVER_LOOP_WAIT_DEFAULT 1
+void inverter_request_prepare(char *);
 
-#define CFG_DAEMON_NUM_DEFAULT 0xFB
+INVDAEMON_BOOL inverter_call_tcp(char *response, char *request);
 
-#define CFG_INVERTER_HOST_DEFAULT "172.16.83.2"
-#define CFG_INVERTER_PORT_DEFAULT 12345
-#define CFG_INVERTER_NUM_DEFAULT 0x01
-
-#define INVERTER_QUERY "UDC;IDC;UL1;IL1;PAC;PRL;TKK;TNF;KDY;KLD"
-
-#define SOCKET_TCP_BUFFER 8192
+INVDAEMON_BOOL inverter_response_parse(queue_item *, char *);
 
 #endif

@@ -28,6 +28,7 @@
 
 #include "http.h"
 #include "log.h"
+#include "config.h"
 
 #define LOG_TAG "cfg"
 

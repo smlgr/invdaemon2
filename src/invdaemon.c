@@ -26,6 +26,7 @@
 #include "http.h"
 #include "queue.h"
 #include "utils.h"
+#include "inverter.h"
 
 char *program_name;
 cfg *conf;
@@ -115,8 +116,16 @@ INVDAEMON_BOOL main_app() {
 }
 
 void *thread_loop_inverter(void *args) {
+    queue_item *new_item;
+
     while (keep_running == 1) {
         log_debug(LOG_TAG_THREAD_INVERTER, "LOOP");
+
+        new_item = queue_item_init();
+        if (inverter_query(new_item)) {
+            log_debug(LOG_TAG_THREAD_INVERTER, "Query successful");
+        }
+
         sleep(conf->inverter_loop_wait);
     }
 

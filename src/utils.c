@@ -18,6 +18,8 @@
 
 #include <time.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdint.h>
 
 #include "utils.h"
 
@@ -40,4 +42,18 @@ unsigned long utils_now() {
     now = s * 1000 + ms;
 
     return now;
+}
+
+uint16_t checksum16(char *input) {
+    unsigned int sum;
+
+    sum = 0;
+
+    while (*input != '\0') {
+        sum += *input;
+        sum %= (unsigned int) 0xFFFF;
+        input++;
+    }
+
+    return (__uint16_t) sum;
 }

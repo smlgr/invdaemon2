@@ -16,7 +16,8 @@ add_executable(invdaemon
         ui.c ui.h
         cfg.c cfg.h
         http.c http.h
-        queue.c queue.h)
+        queue.c queue.h
+        inverter.c inverter.h)
 
 target_link_libraries(invdaemon
         LINK_PUBLIC

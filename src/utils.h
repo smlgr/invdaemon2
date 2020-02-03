@@ -19,11 +19,15 @@
 #ifndef __INVDAEMON2__UTILS_H
 #define __INVDAEMON2__UTILS_H
 
+#include <stdint.h>
+
 #define INVDAEMON_TRUE 1
 #define INVDAEMON_FALSE 0
 
 #define INVDAEMON_BOOL int
 
 unsigned long utils_now();
+
+uint16_t checksum16(char *);
 
 #endif

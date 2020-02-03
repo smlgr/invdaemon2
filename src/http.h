@@ -22,8 +22,6 @@
 #include <stddef.h>
 #include <openssl/ssl.h>
 
-#define SOCKET_TCP_BUFFER 8192
-
 enum http_method_t {
     METHOD_GET,
     METHOD_HEAD,
