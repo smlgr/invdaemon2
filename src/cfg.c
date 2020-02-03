@@ -46,6 +46,16 @@ void cfg_init() {
 
     conf->inverter_loop_wait = CFG_INVERTER_LOOP_WAIT_DEFAULT;
     conf->server_loop_wait = CFG_SERVER_LOOP_WAIT_DEFAULT;
+
+    conf->daemon_num = CFG_DAEMON_NUM_DEFAULT;
+
+    ln = strlen(CFG_INVERTER_HOST_DEFAULT) + 1;
+    conf->inverter_host = (char *) calloc(sizeof(char), ln);
+    strcpy(conf->inverter_host, CFG_INVERTER_HOST_DEFAULT);
+
+    conf->inverter_port = CFG_INVERTER_PORT_DEFAULT;
+    conf->inverter_num = CFG_INVERTER_NUM_DEFAULT;
+
 }
 
 void cfg_free() {
@@ -60,6 +70,11 @@ void cfg_print() {
     log_info(LOG_TAG, "log-file = %s", conf->log_file);
     log_info(LOG_TAG, "inverter-loop-wait = %d", conf->inverter_loop_wait);
     log_info(LOG_TAG, "server-loop-wait = %d", conf->server_loop_wait);
+    log_info(LOG_TAG, "server-loop-wait = %d", conf->server_loop_wait);
+    log_info(LOG_TAG, "daemon-num = %d", conf->daemon_num);
+    log_info(LOG_TAG, "inverter-host = %s", conf->inverter_host);
+    log_info(LOG_TAG, "inverter-port = %d", conf->inverter_port);
+    log_info(LOG_TAG, "inverter-num = %d", conf->inverter_num);
 }
 
 INVDAEMON_BOOL cfg_parse(int argc, char **argv) {
@@ -84,6 +99,10 @@ INVDAEMON_BOOL cfg_parse(int argc, char **argv) {
             {"log-file",           required_argument, 0, 'k'},
             {"inverter-loop-wait", required_argument, 0, 'I'},
             {"server-loop-wait",   required_argument, 0, 'S'},
+            {"daemon-num",         required_argument, 0, 'N'},
+            {"inverter-host",      required_argument, 0, 'a'},
+            {"inverter-port",      required_argument, 0, 'p'},
+            {"inverter-num",       required_argument, 0, 'n'},
             {0, 0,                                    0, 0}
     };
 
@@ -153,6 +172,28 @@ INVDAEMON_BOOL cfg_parse(int argc, char **argv) {
             case 'S':
                 conf->server_loop_wait = (int) strtol(optarg, &endptr, 10);
                 log_trace(LOG_TAG, "Server loop wait set to %d", conf->server_loop_wait);
+                break;
+
+            case 'N':
+                conf->daemon_num = (int) strtol(optarg, &endptr, 10);
+                log_trace(LOG_TAG, "Daemon num set to %d", conf->daemon_num);
+                break;
+
+            case 'a':
+                ln = strlen(optarg) + 1;
+                conf->inverter_host = (char *) realloc((void *) conf->inverter_host, sizeof(char) * ln);
+                strcpy(conf->inverter_host, optarg);
+                log_trace(LOG_TAG, "Inverter host set to %s", conf->inverter_host);
+                break;
+
+            case 'p':
+                conf->inverter_port = (uint16_t) strtol(optarg, &endptr, 10);
+                log_trace(LOG_TAG, "Inverter port set to %d", conf->inverter_port);
+                break;
+
+            case 'n':
+                conf->inverter_num = (uint8_t) strtol(optarg, &endptr, 10);
+                log_trace(LOG_TAG, "Inverter num set to %d", conf->inverter_num);
                 break;
 
             default:
@@ -228,6 +269,24 @@ INVDAEMON_BOOL cfg_file_parse(char *config_file) {
         } else if (strcmp(param, "server-loop-wait") == 0) {
             conf->server_loop_wait = (int) strtol(optarg, &endptr, 10);
             log_debug(LOG_TAG, "Configuration updated. server-loop-wait = %d", conf->server_loop_wait);
+            continue;
+        } else if (strcmp(param, "daemon-num") == 0) {
+            conf->daemon_num = (int) strtol(optarg, &endptr, 10);
+            log_debug(LOG_TAG, "Configuration updated. daemon-num = %d", conf->daemon_num);
+            continue;
+        } else if (strcmp(param, "inverter-host") == 0) {
+            ln = strlen(value) + 1;
+            conf->inverter_host = (char *) realloc((void *) conf->inverter_host, sizeof(char) * ln);
+            strcpy(conf->inverter_host, value);
+            log_debug(LOG_TAG, "Configuration updated. inverter-host = %s", conf->inverter_host);
+            continue;
+        } else if (strcmp(param, "inverter-port") == 0) {
+            conf->inverter_port = (int) strtol(optarg, &endptr, 10);
+            log_debug(LOG_TAG, "Configuration updated. inverter-port = %d", conf->inverter_port);
+            continue;
+        } else if (strcmp(param, "inverter-num") == 0) {
+            conf->inverter_num = (int) strtol(optarg, &endptr, 10);
+            log_debug(LOG_TAG, "Configuration updated. inverter-num = %d", conf->inverter_num);
             continue;
         }
     }

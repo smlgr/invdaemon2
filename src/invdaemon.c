@@ -20,7 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "invdaemon2.h"
+#include "invdaemon.h"
 #include "cfg.h"
 #include "log.h"
 #include "http.h"
@@ -126,7 +126,7 @@ void *thread_loop_inverter(void *args) {
 void *thread_loop_server(void *args) {
     while (keep_running == 1) {
         log_debug(LOG_TAG_THREAD_SERVER, "LOOP");
-        sleep(conf->inverter_loop_wait);
+        sleep(conf->server_loop_wait);
     }
 
     return NULL;

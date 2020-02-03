@@ -25,8 +25,15 @@ struct cfg_t {
     int debug_level;
     int log_file_level;
     char *log_file;
+
     int inverter_loop_wait;
     int server_loop_wait;
+
+    uint8_t daemon_num;
+
+    char *inverter_host;
+    uint16_t inverter_port;
+    uint8_t inverter_num;
 };
 
 typedef struct cfg_t cfg;
