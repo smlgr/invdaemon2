@@ -16,15 +16,29 @@
  *
  */
 
-#ifndef __INVDAEMON2__CONFIG_H
-#define __INVDAEMON2__CONFIG_H
+#ifndef __INVDAEMON2__QUEUE_H
+#define __INVDAEMON2__QUEUE_H
 
-#include "log.h"
+struct queue_item_t {
+    long ts;
+    float dc_voltage;
+    float dc_current;
+    float ac_voltage;
+    float ac_current;
+    float power;
+    float frequency;
+    float temp;
+    struct queue_item_t *next;
+};
 
-#define CFG_DEBUG_LEVEL_DEFAULT LOG_LEVEL_TRACE
-#define CFG_LOG_FILE_LEVEL_DEFAULT LOG_LEVEL_DEBUG
-#define CFG_LOG_FILE_NAME_DEFAULT "invdaemon2.log"
-#define CFG_INVERTER_LOOP_WAIT_DEFAULT 1
-#define CFG_SERVER_LOOP_WAIT_DEFAULT 1
+typedef struct queue_item_t queue_item;
+
+queue_item *queue_item_init();
+
+queue_item *queue_item_put(queue_item *first, queue_item *item);
+
+queue_item *queue_item_remove(queue_item *);
+
+void queue_item_free(queue_item *);
 
 #endif

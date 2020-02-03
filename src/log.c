@@ -19,11 +19,29 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+#include <pthread.h>
+#include <malloc.h>
 
 #include "log.h"
 #include "cfg.h"
 
 extern cfg *conf;
+
+pthread_mutex_t *log_lock;
+
+INVDAEMON_BOOL log_init() {
+    log_lock = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
+    if (pthread_mutex_init(log_lock, NULL) != 0) {
+        return INVDAEMON_FALSE;
+    }
+
+    return INVDAEMON_TRUE;
+}
+
+void log_deinit() {
+    pthread_mutex_destroy(log_lock);
+    free(log_lock);
+}
 
 void log_error(char *where, char *input, ...) {
     va_list args;
@@ -75,6 +93,8 @@ void log_message(log_level level, char *where, char *input, va_list args) {
     char row[32770];
     FILE *fp;
 
+    pthread_mutex_lock(log_lock);
+
     if (level > conf->debug_level && level > conf->log_file_level)
         return;
 
@@ -117,4 +137,6 @@ void log_message(log_level level, char *where, char *input, va_list args) {
         fprintf(fp, "%s\n", row);
         fclose(fp);
     }
+
+    pthread_mutex_unlock(log_lock);
 }

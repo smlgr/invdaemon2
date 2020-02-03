@@ -21,6 +21,10 @@
 
 void signal_handler(int);
 
-void main_app();
+int main_app();
+
+void *thread_loop_inverter(void *args);
+
+void *thread_loop_server(void *args);
 
 #endif

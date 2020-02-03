@@ -26,6 +26,7 @@
 #include "cfg.h"
 #include "config.h"
 #include "ui.h"
+#include "utils.h"
 
 extern cfg *conf;
 
@@ -42,6 +43,9 @@ void cfg_init() {
     ln = strlen(CFG_LOG_FILE_NAME_DEFAULT) + 1;
     conf->log_file = (char *) calloc(sizeof(char), ln);
     strcpy(conf->log_file, CFG_LOG_FILE_NAME_DEFAULT);
+
+    conf->inverter_loop_wait = CFG_INVERTER_LOOP_WAIT_DEFAULT;
+    conf->server_loop_wait = CFG_SERVER_LOOP_WAIT_DEFAULT;
 }
 
 void cfg_free() {
@@ -54,10 +58,12 @@ void cfg_print() {
     log_info(LOG_TAG, "debug-level = %d", (int) conf->debug_level);
     log_info(LOG_TAG, "log-file-level = %d", (int) conf->log_file_level);
     log_info(LOG_TAG, "log-file = %s", conf->log_file);
+    log_info(LOG_TAG, "inverter-loop-wait = %d", conf->inverter_loop_wait);
+    log_info(LOG_TAG, "server-loop-wait = %d", conf->server_loop_wait);
 }
 
-int cfg_parse(int argc, char **argv) {
-    int ret = 0;
+INVDAEMON_BOOL cfg_parse(int argc, char **argv) {
+    INVDAEMON_BOOL ret = INVDAEMON_FALSE;
     int option_index = 0;
     int c;
     size_t ln;
@@ -68,27 +74,29 @@ int cfg_parse(int argc, char **argv) {
     char *endptr;
 
     static struct option long_options[] = {
-            {"config",         required_argument, 0, 'c'},
-            {"help",           no_argument,       0, 'h'},
-            {"version",        no_argument,       0, 'V'},
-            {"quiet",          no_argument,       0, 'q'},
-            {"verbose",        no_argument,       0, 'v'},
-            {"debug-level",    required_argument, 0, 'd'},
-            {"log-file-level", required_argument, 0, 'l'},
-            {"log-file",       required_argument, 0, 'k'},
-            {0, 0,                                0, 0}
+            {"config",             required_argument, 0, 'c'},
+            {"help",               no_argument,       0, 'h'},
+            {"version",            no_argument,       0, 'V'},
+            {"quiet",              no_argument,       0, 'q'},
+            {"verbose",            no_argument,       0, 'v'},
+            {"debug-level",        required_argument, 0, 'd'},
+            {"log-file-level",     required_argument, 0, 'l'},
+            {"log-file",           required_argument, 0, 'k'},
+            {"inverter-loop-wait", required_argument, 0, 'I'},
+            {"server-loop-wait",   required_argument, 0, 'S'},
+            {0, 0,                                    0, 0}
     };
 
     config_file = (char *) malloc(sizeof(char));
     *config_file = '\0';
 
     do {
-        c = getopt_long(argc, argv, "c:hVqvd:k:", long_options, &option_index);
+        c = getopt_long(argc, argv, "c:hVqvd:k:I:S:", long_options, &option_index);
 
         switch (c) {
             case -1:
                 log_trace(LOG_TAG, "Config parse finished");
-                ret = 1;
+                ret = INVDAEMON_TRUE;
                 break;
 
             case '?':
@@ -137,6 +145,16 @@ int cfg_parse(int argc, char **argv) {
                 log_trace(LOG_TAG, "Log file set to %s", conf->log_file);
                 break;
 
+            case 'I':
+                conf->inverter_loop_wait = (int) strtol(optarg, &endptr, 10);
+                log_trace(LOG_TAG, "Inverter loop wait set to %d", conf->inverter_loop_wait);
+                break;
+
+            case 'S':
+                conf->server_loop_wait = (int) strtol(optarg, &endptr, 10);
+                log_trace(LOG_TAG, "Server loop wait set to %d", conf->server_loop_wait);
+                break;
+
             default:
                 log_warning(LOG_TAG, "Option %c not covered", c);
         }
@@ -144,10 +162,10 @@ int cfg_parse(int argc, char **argv) {
 
 
     if (help_requested == 1) {
-        ret = 0;
+        ret = INVDAEMON_FALSE;
         ui_help();
     } else if (version_requested == 1) {
-        ret = 0;
+        ret = INVDAEMON_FALSE;
         ui_version();
     } else if (conf_file == 1) {
         ret = cfg_file_parse(config_file);
@@ -158,7 +176,7 @@ int cfg_parse(int argc, char **argv) {
     return ret;
 }
 
-int cfg_file_parse(char *config_file) {
+INVDAEMON_BOOL cfg_file_parse(char *config_file) {
     FILE *fd;
     char param[80];
     char value[80];
@@ -170,7 +188,7 @@ int cfg_file_parse(char *config_file) {
 
     if (fd == NULL) {
         log_error(LOG_TAG, "Unable to open config file %s", config_file);
-        return 0;
+        return INVDAEMON_FALSE;
     }
 
     log_info(LOG_TAG, "Parsing config file %s", config_file);
@@ -191,22 +209,30 @@ int cfg_file_parse(char *config_file) {
 
         if (strcmp(param, "debug-level") == 0) {
             conf->debug_level = (int) strtol(optarg, &endptr, 10);
-            log_debug(LOG_TAG, "Configuration updated. debug_level = %d", conf->debug_level);
+            log_debug(LOG_TAG, "Configuration updated. debug-level = %d", conf->debug_level);
             continue;
         } else if (strcmp(param, "log-file-level") == 0) {
             conf->log_file_level = (int) strtol(optarg, &endptr, 10);
-            log_debug(LOG_TAG, "Configuration updated. log_file_level = %d", conf->log_file_level);
+            log_debug(LOG_TAG, "Configuration updated. log-file-level = %d", conf->log_file_level);
             continue;
         } else if (strcmp(param, "log-file") == 0) {
             ln = strlen(value) + 1;
             conf->log_file = (char *) realloc((void *) conf->log_file, sizeof(char) * ln);
             strcpy(conf->log_file, value);
-            log_debug(LOG_TAG, "Configuration updated. log_file = %s", conf->log_file);
+            log_debug(LOG_TAG, "Configuration updated. log-file = %s", conf->log_file);
+            continue;
+        } else if (strcmp(param, "inverter-loop-wait") == 0) {
+            conf->inverter_loop_wait = (int) strtol(optarg, &endptr, 10);
+            log_debug(LOG_TAG, "Configuration updated. inverter-loop-wait = %d", conf->inverter_loop_wait);
+            continue;
+        } else if (strcmp(param, "server-loop-wait") == 0) {
+            conf->server_loop_wait = (int) strtol(optarg, &endptr, 10);
+            log_debug(LOG_TAG, "Configuration updated. server-loop-wait = %d", conf->server_loop_wait);
             continue;
         }
     }
 
     fclose(fd);
 
-    return 1;
+    return INVDAEMON_TRUE;
 }

@@ -16,15 +16,14 @@
  *
  */
 
-#ifndef __INVDAEMON2__CONFIG_H
-#define __INVDAEMON2__CONFIG_H
+#ifndef __INVDAEMON2__UTILS_H
+#define __INVDAEMON2__UTILS_H
 
-#include "log.h"
+#define INVDAEMON_TRUE 1
+#define INVDAEMON_FALSE 0
 
-#define CFG_DEBUG_LEVEL_DEFAULT LOG_LEVEL_TRACE
-#define CFG_LOG_FILE_LEVEL_DEFAULT LOG_LEVEL_DEBUG
-#define CFG_LOG_FILE_NAME_DEFAULT "invdaemon2.log"
-#define CFG_INVERTER_LOOP_WAIT_DEFAULT 1
-#define CFG_SERVER_LOOP_WAIT_DEFAULT 1
+#define INVDAEMON_BOOL int
+
+unsigned long utils_now();
 
 #endif

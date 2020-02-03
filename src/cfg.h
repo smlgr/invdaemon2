@@ -25,6 +25,8 @@ struct cfg_t {
     int debug_level;
     int log_file_level;
     char *log_file;
+    int inverter_loop_wait;
+    int server_loop_wait;
 };
 
 typedef struct cfg_t cfg;

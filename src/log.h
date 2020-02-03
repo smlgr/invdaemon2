@@ -30,6 +30,8 @@
 
 #include <stdarg.h>
 
+#include "utils.h"
+
 enum log_level_t {
     DISABLE = LOG_LEVEL_DISABLE,
     ERROR = LOG_LEVEL_ERROR,
@@ -40,6 +42,10 @@ enum log_level_t {
 };
 
 typedef enum log_level_t log_level;
+
+INVDAEMON_BOOL log_init();
+
+void log_deinit();
 
 void log_error(char *, char *, ...);
 

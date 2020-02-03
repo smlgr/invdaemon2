@@ -18,34 +18,56 @@
 
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "invdaemon2.h"
 #include "cfg.h"
 #include "log.h"
 #include "http.h"
+#include "queue.h"
+#include "utils.h"
 
 char *program_name;
 cfg *conf;
 
 static volatile int keep_running = 1;
 
+queue_item *queue;
+pthread_mutex_t *queue_lock;
+
+pthread_t *thread_inverter;
+pthread_t *thread_server;
+
 #define LOG_TAG "invdaemon"
+#define LOG_TAG_THREAD_INVERTER "thread-inverter"
+#define LOG_TAG_THREAD_SERVER "thread-server"
 
 int main(int argc, char **argv) {
+    int ret;
+
+    ret = -1;
     program_name = argv[0];
 
     signal(SIGINT, signal_handler);
+
+    log_init();
 
     cfg_init();
 
     if (cfg_parse(argc, argv)) {
         cfg_print();
-        main_app();
+
+        if (main_app())
+            ret = 0;
+    } else {
+        ret = -1;
     }
 
     cfg_free();
 
-    return 0;
+    log_deinit();
+
+    return ret;
 }
 
 void signal_handler(int signal) {
@@ -54,36 +76,90 @@ void signal_handler(int signal) {
     }
 }
 
-void main_app() {
-    http_url *url;
-    http_tuple *header;
-    http_tuple_list *headers;
-    http_request *request;
-    http_response *response;
-    char *request_body;
+INVDAEMON_BOOL main_app() {
+    int err;
 
-    url = NULL;
-    header = NULL;
-    headers = NULL;
-    request = NULL;
-    response = NULL;
+    queue = NULL;
 
-    log_info(LOG_TAG, "App started");
+    queue_lock = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
+    thread_inverter = (pthread_t *) malloc(sizeof(pthread_t));
+    thread_server = (pthread_t *) malloc(sizeof(pthread_t));
 
-    url = http_url_init(1, "127.0.0.1", 8000, "/", NULL);
+    if (pthread_mutex_init(queue_lock, NULL) != 0) {
+        log_error(LOG_TAG, "Unable to initialize queue mutex");
+        return INVDAEMON_FALSE;
+    }
 
-    header = http_tuple_init("Accept", "application/schema+json");
-    headers = http_tuple_list_add(headers, header);
+    err = pthread_create(thread_inverter, NULL, &thread_loop_inverter, NULL);
+    if (err != 0) {
+        log_error(LOG_TAG, "Unable to create inverter thread");
+        return INVDAEMON_FALSE;
+    }
 
-    header = http_tuple_init("Content-Type", "application/json");
-    headers = http_tuple_list_add(headers, header);
+    err = pthread_create(thread_server, NULL, &thread_loop_server, NULL);
+    if (err != 0) {
+        log_error(LOG_TAG, "Unable to create server thread");
+        return INVDAEMON_FALSE;
+    }
 
-    request_body = (char *) calloc(sizeof(char), 2);
-    memcpy(request_body, "{}", 2);
+    pthread_join(*thread_inverter, NULL);
+    pthread_join(*thread_server, NULL);
 
-    request = http_request_init(url, METHOD_GET, headers, request_body, 2);
-    response = http_call(request);
+    pthread_mutex_destroy(queue_lock);
 
-    http_response_free(response);
-    http_request_free(request);
+    free(thread_server);
+    free(thread_inverter);
+    free(queue_lock);
+
+    return INVDAEMON_TRUE;
 }
+
+void *thread_loop_inverter(void *args) {
+    while (keep_running == 1) {
+        log_debug(LOG_TAG_THREAD_INVERTER, "LOOP");
+        sleep(conf->inverter_loop_wait);
+    }
+
+    return NULL;
+}
+
+void *thread_loop_server(void *args) {
+    while (keep_running == 1) {
+        log_debug(LOG_TAG_THREAD_SERVER, "LOOP");
+        sleep(conf->inverter_loop_wait);
+    }
+
+    return NULL;
+}
+
+//    http_url *url;
+//    http_tuple *header;
+//    http_tuple_list *headers;
+//    http_request *request;
+//    http_response *response;
+//    char *request_body;
+//
+//    url = NULL;
+//    header = NULL;
+//    headers = NULL;
+//    request = NULL;
+//    response = NULL;
+//
+//    log_info(LOG_TAG, "App started");
+//
+//    url = http_url_init(1, "127.0.0.1", 8000, "/", NULL);
+//
+//    header = http_tuple_init("Accept", "application/schema+json");
+//    headers = http_tuple_list_add(headers, header);
+//
+//    header = http_tuple_init("Content-Type", "application/json");
+//    headers = http_tuple_list_add(headers, header);
+//
+//    request_body = (char *) calloc(sizeof(char), 2);
+//    memcpy(request_body, "{}", 2);
+//
+//    request = http_request_init(url, METHOD_GET, headers, request_body, 2);
+//    response = http_call(request);
+//
+//    http_response_free(response);
+//    http_request_free(request);

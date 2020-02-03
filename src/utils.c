@@ -16,15 +16,28 @@
  *
  */
 
-#ifndef __INVDAEMON2__CONFIG_H
-#define __INVDAEMON2__CONFIG_H
+#include <time.h>
+#include <math.h>
 
-#include "log.h"
+#include "utils.h"
 
-#define CFG_DEBUG_LEVEL_DEFAULT LOG_LEVEL_TRACE
-#define CFG_LOG_FILE_LEVEL_DEFAULT LOG_LEVEL_DEBUG
-#define CFG_LOG_FILE_NAME_DEFAULT "invdaemon2.log"
-#define CFG_INVERTER_LOOP_WAIT_DEFAULT 1
-#define CFG_SERVER_LOOP_WAIT_DEFAULT 1
+unsigned long utils_now() {
+    long now;
+    long ms;
+    time_t s;
+    struct timespec spec;
 
-#endif
+    clock_gettime(CLOCK_REALTIME, &spec);
+
+    s = spec.tv_sec;
+    ms = (long) round(spec.tv_nsec / 1.0e6);
+
+    if (ms > 999) {
+        s++;
+        ms = 0;
+    }
+
+    now = s * 1000 + ms;
+
+    return now;
+}
