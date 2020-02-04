@@ -25,6 +25,7 @@
 
 queue_item *queue_item_init() {
     queue_item *item;
+
     item = (queue_item *) malloc(sizeof(queue_item));
 
     item->ts = 0;
@@ -34,6 +35,7 @@ queue_item *queue_item_init() {
     item->ac_current = 0;
     item->power = 0;
     item->temp = 0;
+
     item->next = NULL;
 
     return item;
@@ -42,11 +44,11 @@ queue_item *queue_item_init() {
 queue_item *queue_item_add(queue_item *first, queue_item *item) {
     queue_item *last;
 
-    if (first == NULL)
-        return NULL;
-
     if (item == NULL)
         return first;
+
+    if (first == NULL)
+        return item;
 
     last = first;
 
@@ -76,6 +78,26 @@ void queue_item_free(queue_item *item) {
         return;
 
     free(item);
+}
+
+int queue_count_items(queue_item *queue) {
+    int count;
+    queue_item *item;
+
+    count = 0;
+    item = queue;
+
+    if (item == NULL)
+        return count;
+
+    count++;
+
+    while (item->next != NULL) {
+        count++;
+        item = item->next;
+    }
+
+    return count;
 }
 
 void queue_item_print(queue_item *item) {

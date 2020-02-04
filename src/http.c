@@ -30,7 +30,7 @@
 #include "log.h"
 #include "config.h"
 
-#define LOG_TAG "cfg"
+#define LOG_TAG "http"
 
 void http_tuple_free(http_tuple *tuple) {
     log_info(LOG_TAG, "Freeing tuple");

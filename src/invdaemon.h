@@ -19,6 +19,8 @@
 #ifndef __INVDAEMON2__INVDAEMON2_H
 #define __INVDAEMON2__INVDAEMON2_H
 
+#include "utils.h"
+
 void signal_handler(int);
 
 int main_app();
@@ -26,5 +28,7 @@ int main_app();
 void *thread_loop_inverter(void *args);
 
 void *thread_loop_server(void *args);
+
+INVDAEMON_BOOL send_data_to_server(char *);
 
 #endif

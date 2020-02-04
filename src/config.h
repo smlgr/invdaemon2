@@ -36,6 +36,8 @@
 
 #define INVERTER_QUERY "UDC;IDC;UL1;IL1;PAC;PRL;TKK;TNF;KDY;KLD"
 
+#define SERVER_JSON "{}"
+
 #define SOCKET_TCP_BUFFER 8192
 
 #endif

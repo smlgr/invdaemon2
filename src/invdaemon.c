@@ -25,8 +25,8 @@
 #include "log.h"
 #include "http.h"
 #include "queue.h"
-#include "utils.h"
 #include "inverter.h"
+#include "config.h"
 
 char *program_name;
 cfg *conf;
@@ -117,6 +117,7 @@ INVDAEMON_BOOL main_app() {
 
 void *thread_loop_inverter(void *args) {
     queue_item *new_item;
+    int queue_size;
 
     while (keep_running == 1) {
         log_debug(LOG_TAG_THREAD_INVERTER, "LOOP");
@@ -124,6 +125,13 @@ void *thread_loop_inverter(void *args) {
         new_item = queue_item_init();
         if (inverter_query(new_item)) {
             log_debug(LOG_TAG_THREAD_INVERTER, "Query successful");
+
+            pthread_mutex_lock(queue_lock);
+            queue = queue_item_add(queue, new_item);
+            queue_size = queue_count_items(queue);
+            pthread_mutex_unlock(queue_lock);
+
+            log_debug(LOG_TAG_THREAD_INVERTER, "Queue size: %d", queue_size);
         }
 
         sleep(conf->inverter_loop_wait);
@@ -133,42 +141,72 @@ void *thread_loop_inverter(void *args) {
 }
 
 void *thread_loop_server(void *args) {
+    queue_item *item;
+    char buffer[SOCKET_TCP_BUFFER];
+    int queue_size;
+
     while (keep_running == 1) {
         log_debug(LOG_TAG_THREAD_SERVER, "LOOP");
+
+        if (queue != NULL) {
+            log_debug(LOG_TAG_THREAD_SERVER, "At least one item in queue");
+
+            bzero(buffer, SOCKET_TCP_BUFFER);
+            sprintf(buffer, SERVER_JSON);
+
+            log_debug(LOG_TAG_THREAD_SERVER, "Sending data to server");
+
+            if (send_data_to_server(buffer)) {
+                log_debug(LOG_TAG_THREAD_SERVER, "Data sent");
+
+                pthread_mutex_lock(queue_lock);
+
+                item = queue;
+                queue = item->next;
+                queue_item_free(item);
+
+                queue_size = queue_count_items(queue);
+
+                pthread_mutex_unlock(queue_lock);
+
+                log_debug(LOG_TAG_THREAD_SERVER, "Queue size: %d", queue_size);
+            } else {
+                log_warning(LOG_TAG_THREAD_SERVER, "Unable to contact server");
+            }
+        }
+
         sleep(conf->server_loop_wait);
     }
 
     return NULL;
 }
 
-//    http_url *url;
-//    http_tuple *header;
-//    http_tuple_list *headers;
-//    http_request *request;
-//    http_response *response;
-//    char *request_body;
-//
-//    url = NULL;
-//    header = NULL;
-//    headers = NULL;
-//    request = NULL;
-//    response = NULL;
-//
-//    log_info(LOG_TAG, "App started");
-//
-//    url = http_url_init(1, "127.0.0.1", 8000, "/", NULL);
-//
-//    header = http_tuple_init("Accept", "application/schema+json");
-//    headers = http_tuple_list_add(headers, header);
-//
-//    header = http_tuple_init("Content-Type", "application/json");
-//    headers = http_tuple_list_add(headers, header);
-//
-//    request_body = (char *) calloc(sizeof(char), 2);
-//    memcpy(request_body, "{}", 2);
-//
-//    request = http_request_init(url, METHOD_GET, headers, request_body, 2);
-//    response = http_call(request);
-//
-//    http_response_free(response);
-//    http_request_free(request);
+INVDAEMON_BOOL send_data_to_server(char *request_body) {
+    INVDAEMON_BOOL ret;
+
+    http_url *url;
+    http_tuple *header;
+    http_tuple_list *headers;
+    http_request *request;
+    http_response *response;
+
+    ret = INVDAEMON_FALSE;
+
+    headers = NULL;
+
+    url = http_url_init(0, "127.0.0.1", 8000, "/", NULL);
+
+    header = http_tuple_init("Content-Type", "application/json");
+    headers = http_tuple_list_add(headers, header);
+
+    request = http_request_init(url, METHOD_POST, headers, request_body, strlen(request_body));
+    response = http_call(request);
+
+    if (response != NULL && response->return_code == 200)
+        ret = INVDAEMON_TRUE;
+
+    http_response_free(response);
+    http_request_free(request);
+
+    return ret;
+}

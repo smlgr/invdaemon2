@@ -110,7 +110,7 @@ INVDAEMON_BOOL cfg_parse(int argc, char **argv) {
     *config_file = '\0';
 
     do {
-        c = getopt_long(argc, argv, "c:hVqvd:k:I:S:", long_options, &option_index);
+        c = getopt_long(argc, argv, "c:hVqvd:k:I:S:N:a:p:n:", long_options, &option_index);
 
         switch (c) {
             case -1:

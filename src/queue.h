@@ -35,11 +35,13 @@ typedef struct queue_item_t queue_item;
 
 queue_item *queue_item_init();
 
-queue_item *queue_item_put(queue_item *first, queue_item *item);
+queue_item *queue_item_add(queue_item *, queue_item *);
 
 queue_item *queue_item_remove(queue_item *);
 
 void queue_item_free(queue_item *);
+
+int queue_count_items(queue_item *);
 
 void queue_item_print(queue_item *);
 
