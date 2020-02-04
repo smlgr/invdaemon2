@@ -42,6 +42,7 @@ INVDAEMON_BOOL inverter_query(queue_item *item) {
         return INVDAEMON_FALSE;
 
     inverter_request_prepare(request);
+
     if (!inverter_call_tcp(response, request))
         return INVDAEMON_FALSE;
 
@@ -148,6 +149,7 @@ INVDAEMON_BOOL inverter_response_parse(queue_item *item, char *response) {
     char *v;
     char *c;
     int mode;
+    long value_number;
 
     if (strlen(response) < 19)
         return INVDAEMON_FALSE;
@@ -165,22 +167,23 @@ INVDAEMON_BOOL inverter_response_parse(queue_item *item, char *response) {
         if (*c == '=') {
             mode = 1;
         } else if (*c == ';') {
-            log_debug(LOG_TAG, "%s = %s", param, value);
+            value_number = strtol(value, NULL, 16);
+            log_debug(LOG_TAG, "%s = %s (%ld)", param, value, value_number);
 
             if (strcmp(param, "UDC") == 0)
-                item->dc_voltage = ((float) strtol(value, NULL, 16)) / 10;
+                item->dc_voltage = ((float) value_number) / 10;
             else if (strcmp(param, "IDC") == 0)
-                item->dc_current = ((float) strtol(value, NULL, 16)) / 100;
+                item->dc_current = ((float) value_number) / 100;
             else if (strcmp(param, "UL1") == 0)
-                item->ac_voltage = ((float) strtol(value, NULL, 16)) / 10;
+                item->ac_voltage = ((float) value_number) / 10;
             else if (strcmp(param, "IL1") == 0)
-                item->ac_current = ((float) strtol(value, NULL, 16) / 100);
+                item->ac_current = ((float) value_number / 100);
             else if (strcmp(param, "PAC") == 0)
-                item->power = ((float) strtol(value, NULL, 16) * 5);
+                item->power = ((float) value_number / 2);
             else if (strcmp(param, "TNF") == 0)
-                item->frequency = ((float) strtol(value, NULL, 16)) / 100;
+                item->frequency = ((float) value_number) / 100;
             else if (strcmp(param, "TKK") == 0)
-                item->temp = ((float) strtol(value, NULL, 16) * 10);
+                item->temp = ((float) value_number);
 
             memset(param, '\0', sizeof(param));
             memset(value, '\0', sizeof(value));
@@ -196,8 +199,11 @@ INVDAEMON_BOOL inverter_response_parse(queue_item *item, char *response) {
                 v++;
             }
         }
+
         c++;
     }
+
+    queue_item_print(item);
 
     return INVDAEMON_TRUE;
 }

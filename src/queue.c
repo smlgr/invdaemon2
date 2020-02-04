@@ -19,6 +19,9 @@
 #include <malloc.h>
 
 #include "queue.h"
+#include "log.h"
+
+#define LOG_TAG "queue"
 
 queue_item *queue_item_init() {
     queue_item *item;
@@ -73,4 +76,18 @@ void queue_item_free(queue_item *item) {
         return;
 
     free(item);
+}
+
+void queue_item_print(queue_item *item) {
+    if (item == NULL)
+        return;
+
+    log_debug(LOG_TAG, "Item ts: %ld", item->ts);
+    log_debug(LOG_TAG, "Item dc_voltage: %.01f V", item->dc_voltage);
+    log_debug(LOG_TAG, "Item dc_current: %.02f A", item->dc_current);
+    log_debug(LOG_TAG, "Item ac_voltage: %.01f V", item->ac_voltage);
+    log_debug(LOG_TAG, "Item ac_current: %.02f A", item->ac_current);
+    log_debug(LOG_TAG, "Item power: %.02f W", item->power);
+    log_debug(LOG_TAG, "Item frequency: %.02f Hz", item->frequency);
+    log_debug(LOG_TAG, "Item temp: %.01f °C", item->temp);
 }

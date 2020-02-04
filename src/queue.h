@@ -41,4 +41,6 @@ queue_item *queue_item_remove(queue_item *);
 
 void queue_item_free(queue_item *);
 
+void queue_item_print(queue_item *);
+
 #endif
